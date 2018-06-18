@@ -10,6 +10,7 @@
 import rospy
 import actionlib
 from std_msgs.msg import Time, Duration
+from time import sleep
 from rr_cloud_bridge_analyzer.srv import CloudBridgeTestService
 from rr_cloud_bridge_analyzer.msg import CloudBridgeTestActionAction, \
     CloudBridgeTestActionFeedback, CloudBridgeTestActionResult, CloudBridgeTest
@@ -42,6 +43,20 @@ class CloudBridgeTestClient(object):
         )
 
     def spin(self, freq):
+        
+        waiting_peer = True
+        while(waiting_peer):
+            topics = rospy.get_published_topics()
+            for topic in topics:
+                # print topic[0], 'rr_cloud_bridge_heartbeat' in topic[0]
+                if 'rr_cloud_bridge_heartbeat' in topic[0] and '__self__' not in topic[0]:
+                    peer = topic[0].split('/')[-1]
+                    waiting_peer = False
+                else:
+                    print 'Waiting peer appearance'
+            sleep(1)
+
+
         r = rospy.Rate(freq)
         count = 0
         id_1hz = 0
@@ -67,7 +82,6 @@ class CloudBridgeTestClient(object):
                 # self._topic1hz_pub.publish(topic)
 
                 # service
-                peer = 'pc1/'
                 # print  'service_in' + str(self._server_id)
                 rospy.wait_for_service('service_in' + str(self._server_id))
                 srv_client = rospy.ServiceProxy(
@@ -77,9 +91,9 @@ class CloudBridgeTestClient(object):
                 rospy.loginfo('Get service result:'+str(srv_client(rospy.Time.now())))
 
                 # print  peer+'service_in' + str(self._server_id+1)
-                rospy.wait_for_service(peer+'service_in' + str(self._server_id+1))
+                rospy.wait_for_service(peer+'/service_in' + str(self._server_id+1))
                 srv_client = rospy.ServiceProxy(
-                    'pc1/service_in' + str(self._server_id+1), CloudBridgeTestService)
+                    peer+'/service_in' + str(self._server_id+1), CloudBridgeTestService)
                 t = srv_client(rospy.Time.now()).data
                 self._trans_time_service_pub.publish(rospy.Time.now() - t)
                 rospy.loginfo('Get service result:'+str(srv_client(rospy.Time.now())))
@@ -98,7 +112,7 @@ class CloudBridgeTestClient(object):
                 rospy.loginfo('Get action result:'+str(act_client.get_result()))
 
                 # print peer+'action_in' + str(self._server_id+1)
-                act_client = actionlib.SimpleActionClient(peer+'action_in' + str(self._server_id+1),
+                act_client = actionlib.SimpleActionClient(peer+'/action_in' + str(self._server_id+1),
                                                           CloudBridgeTestActionAction)
                 act_client.wait_for_server()
                 goal = Time(data=rospy.Time.now())

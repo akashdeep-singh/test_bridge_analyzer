@@ -11,6 +11,7 @@ import copy
 
 import rospy
 import actionlib
+from time import sleep
 from std_msgs.msg import Time, Duration, Int16
 
 from rr_cloud_bridge_analyzer.srv import CloudBridgeTestService
@@ -31,7 +32,17 @@ class CloudBridgeTestServer(object):
 
         #client alias name
         #todo get from param
-        peer = 'pc2/' 
+        waiting_peer = True
+        while(waiting_peer):
+            topics = rospy.get_published_topics()
+            for topic in topics:
+                # print topic[0], 'rr_cloud_bridge_heartbeat' in topic[0]
+                if 'rr_cloud_bridge_heartbeat' in topic[0] and '__self__' not in topic[0]:
+                    peer = topic[0].split('/')[-1]
+                    waiting_peer = False
+                else:
+                    print 'Waiting peer appearance'
+            sleep(1)
 
         # ids for check message drop
         self._id_1hz = None
@@ -53,14 +64,14 @@ class CloudBridgeTestServer(object):
         # )
         
         self._srv1 = rospy.Service(
-            peer+'service_in' + str(self._server_id), CloudBridgeTestService, self._srv_cb1
+            peer+'/service_in' + str(self._server_id), CloudBridgeTestService, self._srv_cb1
         )
         self._srv2 = rospy.Service(
             'service_in' + str(self._server_id+1), CloudBridgeTestService, self._srv_cb2
         )
 
         self._as1 = actionlib.SimpleActionServer(
-            peer+'action_in' + str(self._server_id), CloudBridgeTestActionAction, execute_cb=self._act_cb1, auto_start=False
+            peer+'/action_in' + str(self._server_id), CloudBridgeTestActionAction, execute_cb=self._act_cb1, auto_start=False
         )
         self._as1.start()
         self._as2 = actionlib.SimpleActionServer(
