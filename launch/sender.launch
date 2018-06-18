@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <node name="sender" pkg="rr_cloud_bridge_analyzer" type="sender.py" required="true" output="screen"></node>
+
+</launch>
+

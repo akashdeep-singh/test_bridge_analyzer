@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- TODO: remove -->
+<launch>
+    <arg name="cloudbridge" default="false"/>
+    <arg name="this_pc"     default="1"/>
+    <arg name="another_pc"  default="2"/>
+
+    <!-- pc1-->
+    <node pkg="rr_cloud_bridge_analyzer" type="cloud_bridge_test_server.py" name="cloud_bridge_test_server" output="screen" >
+        <param name="server_id"     value="$(arg this_pc)" />
+        <param name="client_id"     value="$(arg another_pc)" />
+    </node>
+
+    <group if="$(arg cloudbridge)">
+        <rosparam command="load" file="$(find rr_cloud_bridge_analyzer)/config/cloud_bridge_test$(arg this_pc).yaml" />
+        <node pkg="rr_cloud_bridge" name="rr_bridge" type="rr_bridge.py" output="screen" required="true"/>
+    </group>
+
+    <node pkg="rosbag" type="record" name="rosbag_record" args="-a -o $(env HOME)/cbtest" /> 
+
+</launch>
